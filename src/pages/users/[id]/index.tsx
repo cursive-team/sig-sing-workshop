@@ -372,8 +372,6 @@ const UserProfilePage = () => {
       const fetchedUser = fetchUserByUUID(id);
       setUser(fetchedUser);
 
-      console.log(fetchedUser);
-
       if (fetchedUser) {
         setOtherEncPk(fetchedUser.encPk);
         setSelfEncPk(profile.encryptionPublicKey);
@@ -393,8 +391,6 @@ const UserProfilePage = () => {
   }
 
   const isOverlapComputed = psiState === PSIState.COMPLETE;
-
-  console.log(user);
 
   return (
     <div>
