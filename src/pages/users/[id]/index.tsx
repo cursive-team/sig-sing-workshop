@@ -30,6 +30,7 @@ import { Accordion } from "@/components/Accordion";
 import { handleUsername } from "@/lib/client/utils";
 import { Icons } from "@/components/Icons";
 import { logClientEvent } from "@/lib/client/metrics";
+import { MintNFT } from "@/components/MintNFT/MintNFT";
 
 const Label = classed.span("text-sm text-gray-12");
 
@@ -371,6 +372,8 @@ const UserProfilePage = () => {
       const fetchedUser = fetchUserByUUID(id);
       setUser(fetchedUser);
 
+      console.log(fetchedUser);
+
       if (fetchedUser) {
         setOtherEncPk(fetchedUser.encPk);
         setSelfEncPk(profile.encryptionPublicKey);
@@ -390,6 +393,8 @@ const UserProfilePage = () => {
   }
 
   const isOverlapComputed = psiState === PSIState.COMPLETE;
+
+  console.log(user);
 
   return (
     <div>
@@ -599,6 +604,15 @@ const UserProfilePage = () => {
               </div>
             </div>
           )}
+        </Card.Base>
+
+        <Card.Base>
+          <MintNFT
+            user={user}
+            pub={undefined}
+            proof={undefined}
+            input={undefined}
+          />
         </Card.Base>
       </div>
     </div>

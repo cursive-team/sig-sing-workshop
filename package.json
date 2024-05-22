@@ -8,18 +8,25 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "postinstall": "prisma migrate deploy && prisma generate"
+    "compile": "npx hardhat compile",
+    "postinstall": "prisma migrate deploy && prisma generate",
+    "test:contracts": "npx hardhat test",
+    "deploy:testnet": "npx hardhat ignition deploy ./solidity/ignition/modules/deploy.ts --network sepolia --deployment-id sepolia-deployment",
+    "deploy:verify": "npx hardhat ignition verify sepolia-deployment",
+    "testnet:deploy": "yarn compile && yarn deploy:testnet && yarn deploy:verify"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
     "@hookform/resolvers": "^3.3.4",
     "@next/font": "^14.1.4",
+    "@openzeppelin/contracts": "^5.0.2",
     "@prisma/client": "^5.8.1",
     "@simplewebauthn/browser": "^9.0.1",
     "@simplewebauthn/server": "^9.0.3",
     "@supabase/supabase-js": "^2.42.0",
-    "@tanstack/react-query": "^5.17.19",
+    "@tanstack/react-query": "^5.37.1",
     "@tw-classed/react": "^1.7.0",
+    "@types/snarkjs": "^0.7.8",
     "@vercel/analytics": "^1.2.2",
     "@vercel/blob": "^0.22.3",
     "babyjubjub-ecdsa": "^1.2.0",
@@ -29,6 +36,9 @@
     "comlink": "^4.4.1",
     "dayjs": "^1.11.10",
     "detectincognitojs": "^1.3.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.12.1",
+    "fs": "^0.0.1-security",
     "idb": "^8.0.0",
     "js-sha256": "^0.11.0",
     "jsonwebtoken": "^9.0.2",
@@ -41,6 +51,7 @@
     "react-hook-form": "^7.50.1",
     "react-linkify": "^1.0.0-alpha",
     "react-qr-code": "^2.0.12",
+    "snarkjs": "^0.7.4",
     "sonner": "^1.4.0",
     "swiper": "^11.1.0",
     "tailwind-merge": "^2.2.0",
@@ -48,6 +59,8 @@
     "yup": "^1.3.3"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@tanstack/eslint-plugin-query": "^5.17.22",
     "@types/jest": "^29.5.11",
     "@types/jsonwebtoken": "^9.0.6",
@@ -60,10 +73,12 @@
     "daisyui": "^4.6.0",
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
+    "hardhat": "^2.22.4",
     "postcss": "^8",
     "prisma": "^5.8.1",
     "tailwindcss": "^3.3.0",
     "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

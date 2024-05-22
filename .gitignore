@@ -43,3 +43,18 @@ docker-compose.yml
 
 # only package-lock.json
 yarn.lock
+
+# Hardhat files
+/solidity/cache
+/solidity/artifacts
+
+# TypeChain files
+/solidity/typechain
+/solidity/typechain-types
+
+# solidity-coverage files
+/coverage
+/coverage.json
+
+# Hardhat Ignition default folder for deployments against a local node
+/solidity/ignition/deployments
