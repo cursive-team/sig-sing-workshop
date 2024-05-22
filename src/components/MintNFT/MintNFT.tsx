@@ -39,11 +39,11 @@ const MintNFT = ({ input, user, proof, pub }: MintNFTProps<any>) => {
 
   const username = user.name;
 
-  const hasAlreadyMinted = mintedNFTs.includes(username);
+  const hasAlreadyMinted = mintedNFTs[username] !== undefined;
 
   const verifyAndMint = async (to: string): Promise<any> => {
     try {
-      const tokenId = await contract._nextTokenId();
+      const tokenId = await contract._nextTokenId(); // get the next token ID
 
       if (!ethers.isAddress(to)) {
         toast.error("Invalid or missing address");
@@ -53,10 +53,12 @@ const MintNFT = ({ input, user, proof, pub }: MintNFTProps<any>) => {
         throw new Error("WALLET_PRIVATE_KEY is not set");
       }
 
+      const nextTokenId = Number(tokenId.toString()) + 1;
+
       // Generate metadata and upload to Pinata
       const metadata = await generateMetadata({
         username,
-        tokenID: tokenId.toString(),
+        tokenID: nextTokenId,
       });
 
       const pinataResponse = await uploadToPinata(metadata);
@@ -66,18 +68,22 @@ const MintNFT = ({ input, user, proof, pub }: MintNFTProps<any>) => {
       const tx = await contract.verifyAndMint(to, metadataURI, callData);
 
       // store details for user that i minted NFTs
-      saveNTFDetails(username);
+      saveNTFDetails(username, nextTokenId);
 
       return tx.wait(); // wait for the transaction to be mined
     } catch (error) {
+      console.error("Error minting NFT", error);
       toast.error("Something went wrong, please try it again.");
     }
   };
 
   // store user that i minted NFTs in local storage
-  const saveNTFDetails = (username: string) => {
-    const items = JSON.parse(getFromLocalStorage(NFT_STORAGE_KEY) || "[]");
-    items.push(username);
+  const saveNTFDetails = (username: string, tokenID: string | number) => {
+    let items = JSON.parse(getFromLocalStorage(NFT_STORAGE_KEY) || "{}");
+    items = {
+      ...items,
+      [username]: tokenID,
+    };
     saveToLocalStorage(NFT_STORAGE_KEY, JSON.stringify(items));
   };
 

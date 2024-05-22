@@ -1,6 +1,6 @@
 interface MetadataProps {
   username: string;
-  tokenID: string;
+  tokenID: string | number;
 }
 
 export const generateMetadata = async ({
