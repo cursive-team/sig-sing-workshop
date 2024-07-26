@@ -4,63 +4,6 @@ import { object, string, boolean } from "yup";
 
 export const MAX_SIGNIN_CODE_GUESS_ATTEMPTS = 5;
 
-/**
- * Generates a one-time signin code as a 6 digit integer represented as a string, with leading zeros if necessary.
- * Send this code to the user via email.
- * @returns Boolean indicating success.
- */
-export const generateAndSendSigninCode = async (
-  email: string
-): Promise<boolean> => {
-  // Delete all signin codes associated with the email
-  await prisma.signinCode.deleteMany({
-    where: { email },
-  });
-
-  // Generate a one-time signin code as a 6 digit integer represented as a string, with leading zeros if necessary
-  const newSigninCode = Math.floor(Math.random() * 1000000)
-    .toString()
-    .padStart(6, "0");
-
-  // Set the expiration time to 30 minutes from the current time
-  // 30 minutes * 60 seconds per minute * 1000 milliseconds per second
-  const expiresAt = new Date(new Date().getTime() + 30 * 60 * 1000);
-
-  // Save the signin code and expiration time associated with the email in the database
-  const signinCodeEntry = await prisma.signinCode.create({
-    data: { value: newSigninCode, email, expiresAt, usedGuessAttempts: 0 },
-  });
-  const signinCode = signinCodeEntry.value;
-
-  const response = await fetch(
-    "https://platform.iyk.app/api/admin/eth-denver-login-email",
-    {
-      method: "POST",
-      headers: {
-        "x-cursive-secret": process.env.IYK_EMAIL_API_SECRET!,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        recipient: email,
-        code: signinCode,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    console.error(`Error sending email to user ${email}: `, response);
-    return false;
-  }
-
-  const { success } = await response.json();
-  if (!success) {
-    console.error("Failed to send email to user ${email}: ", response);
-    return false;
-  }
-
-  return true;
-};
-
 export type AuthTokenResponse = {
   value: string;
   expiresAt: Date;

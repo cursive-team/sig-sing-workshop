@@ -3,17 +3,17 @@ import { Html, Head, Main, NextScript } from "next/document";
 export default function Document() {
   return (
     <Html lang="en">
-      <title>Cursive NFC Demo</title>
+      <title>Backpocket Alpha</title>
       <Head>
         <meta
           name="description"
-          content="Tap NFC cards at the SigSing residency to verifiably digitize your in-person experience."
+          content="Tap NFC rings to build your social graph, use MPC to query efficiently."
           key="desc"
         />
-        <meta property="og:title" content="Cursive NFC Demo" />
+        <meta property="og:title" content="Backpocket Alpha" />
         <meta
           property="og:description"
-          content="Tap NFC cards at the SigSing residency to verifiably digitize your in-person experience."
+          content="Tap NFC rings to build your social graph, use MPC to query efficiently."
         />
         <meta property="og:image" content="/cursive.jpg" />
         <link

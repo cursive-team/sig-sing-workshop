@@ -37,6 +37,8 @@ model User {
   questProofs               QuestProof[]       @relation("QuestProofUser")
   admin                     Admin?
   foldedProofs              FoldedProof[]
+  Room                      Room[]
+  RoomMember                RoomMember[]
 }
 
 model Admin {
@@ -218,4 +220,24 @@ model CmacChipRegistration {
   chipId         String
   isLocationChip Boolean
   createdAt      DateTime @default(now())
+}
+
+model Room {
+  id         Int          @id @default(autoincrement())
+  name       String
+  numParties Int
+  isActive   Boolean      @default(true)
+  creatorId  Int
+  createdAt  DateTime     @default(now())
+  creator    User         @relation(fields: [creatorId], references: [id])
+  members    RoomMember[]
+}
+
+model RoomMember {
+  id        Int      @id @default(autoincrement())
+  roomId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }

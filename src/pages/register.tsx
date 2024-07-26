@@ -397,8 +397,19 @@ export default function Register() {
   const StateContent: Record<DisplayState, JSX.Element> = {
     [DisplayState.PASSKEY]: (
       <FormStepLayout
-        title="Cursive NFC Demo"
-        subtitle="Set up socials to share when others tap your badge. Register to maintain an encrypted backup of data you collect."
+        title="Backpocket Alpha"
+        subtitle={
+          <div className="flex flex-col gap-2">
+            <div>
+              Tap NFC rings to build your social graph, use MPC to query
+              efficiently.
+            </div>
+            <div>
+              Set up socials to share, register to maintain an encrypted backup
+              of your data.
+            </div>
+          </div>
+        }
         className="pt-4"
         onSubmit={handleSubmitWithPasskey}
       >
@@ -459,8 +470,8 @@ export default function Register() {
     ),
     [DisplayState.PASSWORD]: (
       <FormStepLayout
-        title="Cursive NFC demo"
-        subtitle="Choose a master password to maintain an encrypted backup of data you collect."
+        title="Backpocket Alpha"
+        subtitle="Choose a master password to maintain an encrypted backup your data."
         className="pt-4"
         onSubmit={handleSubmitWithPassword}
       >
@@ -521,12 +532,8 @@ export default function Register() {
             <Description>
               <span>
                 {" "}
-                Use 2PC+FHE to{" "}
-                <Underline>
-                  {" "}
-                  discover who you{"'"}ve met in common
-                </Underline>{" "}
-                with others.
+                Use MPC to <Underline> discover common contacts</Underline> and
+                to <Underline>query your social graph.</Underline>
               </span>
             </Description>
           </div>
