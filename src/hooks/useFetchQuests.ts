@@ -15,8 +15,8 @@ export const useFetchQuests = () => {
     queryFn: async (): Promise<QuestWithCompletion[]> => {
       const authToken = getAuthToken();
       if (!authToken || authToken.expiresAt < new Date()) {
-        toast.error("You must be logged in to connect");
-        router.push("/login");
+        toast.error("You must be registered to view proofs");
+        router.push("/register");
         return [];
       }
 

@@ -31,7 +31,6 @@ import { Card } from "@/components/cards/Card";
 import { Spinner } from "@/components/Spinner";
 import Link from "next/link";
 import { logClientEvent } from "@/lib/client/metrics";
-import { useWorker } from "@/hooks/useWorker";
 
 enum DisplayState {
   PASSKEY,
@@ -53,18 +52,17 @@ export default function Register() {
   const [displayName, setDisplayName] = useState<string>();
   const [twitter, setTwitter] = useState<string>("@");
   const [telegram, setTelegram] = useState<string>("@");
+  const [realTg, setRealTg] = useState<string>("@");
   const [bio, setBio] = useState<string>();
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [chipId, setChipId] = useState<string>();
+  const [chipEnc, setChipEnc] = useState<string>();
   const [loading, setLoading] = useState(false);
   const [isAccountReady, setIsAccountReady] = useState(false);
 
-  const { work } = useWorker();
-
   useEffect(() => {
-    if (router.query.chipId) {
-      setChipId(router.query.chipId as string);
+    if (router.query.chipEnc) {
+      setChipEnc(router.query.chipEnc as string);
     }
   }, [router.query]);
 
@@ -261,13 +259,18 @@ export default function Register() {
     passwordSalt = generateSalt();
     passwordHash = await hashPassword(password, passwordSalt);
 
+    let realBio = bio;
+    if (realTg !== "@") {
+      realBio = realTg + "|" + (bio ?? "");
+    }
+
     const response = await fetch("/api/register/create_account", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        chipId,
+        chipEnc,
         displayName,
         encryptionPublicKey: publicKey,
         signaturePublicKey,
@@ -278,7 +281,7 @@ export default function Register() {
         authPublicKey,
         twitter,
         telegram,
-        bio,
+        bio: realBio,
       }),
     });
 
@@ -387,9 +390,6 @@ export default function Register() {
       return;
     }
 
-    // Begin downloading params in web worker
-    work([], []);
-
     setIsAccountReady(true);
     setLoading(false);
   };
@@ -397,15 +397,23 @@ export default function Register() {
   const StateContent: Record<DisplayState, JSX.Element> = {
     [DisplayState.PASSKEY]: (
       <FormStepLayout
-        title="Cursive NFC Demo"
-        subtitle="Set up socials to share when others tap your badge. Register to maintain an encrypted backup of data you collect."
+        title="Backpocket Alpha"
+        subtitle={
+          <div className="flex flex-col gap-2">
+            <div>
+              Tap NFC rings to build your social graph, use MPC to query
+              efficiently. Set up socials to share, register to maintain an
+              encrypted backup of your data.
+            </div>
+          </div>
+        }
         className="pt-4"
         onSubmit={handleSubmitWithPasskey}
       >
         <Input
           type="text"
           id="displayName"
-          label="Display name (*)"
+          label="Display name (required)"
           placeholder="Name others will see upon tap"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
@@ -426,7 +434,21 @@ export default function Register() {
         />
         <Input
           type="text"
-          id="telegram"
+          id="tg"
+          label="Telegram"
+          placeholder="@username"
+          value={realTg}
+          onChange={(e) =>
+            setRealTg(
+              e.target.value.charAt(0) === "@"
+                ? e.target.value
+                : "@" + e.target.value
+            )
+          }
+        />
+        <Input
+          type="text"
+          id="daimo"
           label="Daimo"
           placeholder="@username"
           value={telegram}
@@ -442,25 +464,34 @@ export default function Register() {
           type="text"
           id="bio"
           label="Bio"
-          placeholder="Your organization, website, other info"
+          placeholder="Your organization, website, etc."
           value={bio}
           onChange={(e) => setBio(e.target.value)}
         />
-        <Button type="submit" loading={loading}>
-          Register with passkey
-        </Button>
-        <span
-          className="text-center text-sm"
-          onClick={handleCreateWithPassword}
-        >
-          <u>Register with password instead</u>
-        </span>
+        <div className="flex flex-col gap-2">
+          <Button type="submit" loading={loading}>
+            Register with passkey
+          </Button>
+          <div className="text-center">
+            <span
+              className="text-center text-sm"
+              onClick={handleCreateWithPassword}
+            >
+              <u>Register with password</u>
+            </span>
+          </div>
+          <div className="text-center">
+            <span className="text-sm" onClick={() => router.push("/login")}>
+              <u>Already have account</u>
+            </span>
+          </div>
+        </div>
       </FormStepLayout>
     ),
     [DisplayState.PASSWORD]: (
       <FormStepLayout
-        title="Cursive NFC demo"
-        subtitle="Choose a master password to maintain an encrypted backup of data you collect."
+        title="Backpocket Alpha"
+        subtitle="Choose a master password to maintain an encrypted backup your data."
         className="pt-4"
         onSubmit={handleSubmitWithPassword}
       >
@@ -480,12 +511,17 @@ export default function Register() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />
-        <Button type="submit" loading={loading}>
-          Register
-        </Button>
-        <span className="text-center text-sm" onClick={handleCreateWithPasskey}>
-          <u>Register with passkey instead</u>
-        </span>
+        <div className="flex flex-col gap-4">
+          <Button type="submit" loading={loading}>
+            Register
+          </Button>
+          <span
+            className="text-center text-sm"
+            onClick={handleCreateWithPasskey}
+          >
+            <u>Register with passkey instead</u>
+          </span>
+        </div>
       </FormStepLayout>
     ),
     [DisplayState.CREATING]: (
@@ -521,12 +557,8 @@ export default function Register() {
             <Description>
               <span>
                 {" "}
-                Use 2PC+FHE to{" "}
-                <Underline>
-                  {" "}
-                  discover who you{"'"}ve met in common
-                </Underline>{" "}
-                with others.
+                Use MPC to <Underline> discover common contacts</Underline> and
+                to <Underline>query your social graph.</Underline>
               </span>
             </Description>
           </div>

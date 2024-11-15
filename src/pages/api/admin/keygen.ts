@@ -1,7 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/server/prisma";
 import { generateSignatureKeyPair } from "@/lib/shared/signature";
-import { initialKeygenData } from "@/shared/keygen";
+import {
+  initialKeygenData,
+  initialLocationData,
+  keyUids,
+} from "@/shared/keygen";
 import { getServerRandomNullifierRandomness } from "@/lib/server/proving";
 
 type CreateChipKeyData = {
@@ -45,34 +49,26 @@ export default async function handler(
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const existingChipKey = await prisma.chipKey.findFirst();
-  if (existingChipKey) {
-    return res.status(400).json({ error: "Chip keys already exist" });
-  }
+  // const existingChipKey = await prisma.chipKey.findFirst();
+  // if (existingChipKey) {
+  //   return res.status(400).json({ error: "Chip keys already exist" });
+  // }
 
   try {
     const allUserIds: number[] = [];
-    const speakerUserIds: number[] = [];
     const allTalkIds: number[] = [];
+    // const speakerUserIds: number[] = [];
 
     const allChipKeyData: CreateChipKeyData[] = [];
     const allUserData: PrecreateUserData[] = [];
     const allLocationData: CreateLocationData[] = [];
 
-    let totalIndex = 1;
-    let userIndex = 1;
-    let locationIndex = 1;
-    for (const [chipId, chipData] of Object.entries(initialKeygenData)) {
-      console.log(
-        "Generating keypair for chip",
-        chipId,
-        "(",
-        totalIndex++,
-        "of",
-        Object.keys(initialKeygenData).length,
-        ")"
-      );
+    const newKeyUids = [];
+    for (let i = 1; i <= 50; i++) {
+      newKeyUids.push("CURSIVE" + i.toString().padStart(2, "0"));
+    }
 
+    for (const chipId of newKeyUids) {
       // Generate and save signing keypair
       const { signingKey, verifyingKey } = generateSignatureKeyPair();
       allChipKeyData.push({
@@ -81,55 +77,53 @@ export default async function handler(
         signaturePrivateKey: signingKey,
       });
 
-      // Logic for person chips
-      if (chipData.type === "person") {
-        // Precreate user object
-        const isUserSpeaker = chipData.isPersonSpeaker ? true : false;
-        allUserData.push({
-          chipId,
-          isRegistered: false,
-          isUserSpeaker,
-          displayName: chipId,
-          encryptionPublicKey: "",
-          signaturePublicKey: verifyingKey,
-          psiPublicKeysLink: "",
-        });
-        allUserIds.push(userIndex);
-        if (chipData.isPersonSpeaker) {
-          speakerUserIds.push(userIndex);
-        }
-        userIndex++;
+      allUserData.push({
+        chipId,
+        isRegistered: false,
+        isUserSpeaker: false,
+        displayName: chipId,
+        encryptionPublicKey: "",
+        signaturePublicKey: verifyingKey,
+        psiPublicKeysLink: "",
+      });
+    }
 
-        // Logic for talk chips
-      } else if (chipData.type === "talk") {
-        const name = chipData.talkName ? chipData.talkName : "Example Talk";
-        const stage = chipData.talkStage ? chipData.talkStage : "Example Stage";
-        const speaker = chipData.talkSpeaker
-          ? chipData.talkSpeaker
-          : "Example Speaker";
-        const description = chipData.talkDescription
-          ? chipData.talkDescription
-          : "Example Description";
-        const startTime = chipData.talkStartTime
-          ? chipData.talkStartTime
-          : "12:00";
-        const endTime = chipData.talkEndTime ? chipData.talkEndTime : "13:00";
-        allLocationData.push({
-          id: locationIndex,
-          chipId,
-          name,
-          stage,
-          speaker,
-          description,
-          startTime,
-          endTime,
-          signaturePublicKey: verifyingKey,
-        });
-        allTalkIds.push(locationIndex);
-        locationIndex++;
-      } else {
-        console.error("Invalid keygen type, chipId:", chipId);
-      }
+    // create all locations
+    let locationIndex = 1;
+    for (const [chipId, chipData] of Object.entries(initialLocationData)) {
+      // Generate and save signing keypair
+      const { signingKey, verifyingKey } = generateSignatureKeyPair();
+      allChipKeyData.push({
+        chipId,
+        signaturePublicKey: verifyingKey,
+        signaturePrivateKey: signingKey,
+      });
+
+      const name = chipData.talkName ? chipData.talkName : "Example Talk";
+      const stage = chipData.talkStage ? chipData.talkStage : "Example Stage";
+      const speaker = chipData.talkSpeaker
+        ? chipData.talkSpeaker
+        : "Example Speaker";
+      const description = chipData.talkDescription
+        ? chipData.talkDescription
+        : "Example Description";
+      const startTime = chipData.talkStartTime
+        ? chipData.talkStartTime
+        : "12:00";
+      const endTime = chipData.talkEndTime ? chipData.talkEndTime : "13:00";
+      allLocationData.push({
+        id: locationIndex,
+        chipId,
+        name,
+        stage,
+        speaker,
+        description,
+        startTime,
+        endTime,
+        signaturePublicKey: verifyingKey,
+      });
+      allTalkIds.push(locationIndex);
+      locationIndex++;
     }
 
     // Create all chip keys
@@ -149,76 +143,76 @@ export default async function handler(
 
     // BEGIN HARDCODED QUESTS FOR SIG SING WORKSHOP
     // Quest 1: Meet 10 attendees
-    await prisma.quest.create({
-      data: {
-        name: "🦋 Symposium Seeker",
-        description:
-          "Connect with 10 people to make this proof. Ask to tap their ring, share socials, and discover event activity that you have in common.",
-        userRequirements: {
-          create: [
-            {
-              name: "Connect with 10 people at SigSing",
-              numSigsRequired: 10,
-              sigNullifierRandomness: getServerRandomNullifierRandomness(), // Ensures signatures cannot be reused to meet this requirement
-              users: {
-                connect: allUserIds.map((id) => ({ id })),
-              },
-            },
-          ],
-        },
-        locationRequirements: {
-          create: [],
-        },
-      },
-    });
-
-    // Quest 2: Meet 3 speakers
-    await prisma.quest.create({
-      data: {
-        name: "🎤 Oracle Encounter",
-        description:
-          "Ask 3 speakers a question or share feedback about their talk. Ask to tap their ring to collect a link to their presentation slides (if available)",
-        userRequirements: {
-          create: [
-            {
-              name: "Connect with 3 speakers at the Sig Sing workshop",
-              numSigsRequired: 3,
-              sigNullifierRandomness: getServerRandomNullifierRandomness(), // Ensures signatures cannot be reused to meet this requirement
-              users: {
-                connect: speakerUserIds.map((id) => ({ id })),
-              },
-            },
-          ],
-        },
-        locationRequirements: {
-          create: [],
-        },
-      },
-    });
-
-    // Quest 3: Attend 5 talks
     // await prisma.quest.create({
     //   data: {
-    //     name: "👩‍🏫 Acropolis Assembler",
+    //     name: "🦋 Social Butterfly",
     //     description:
-    //       "Tap in to 5 talks at Zk Summit 11 to make this proof. Look for cards on posters at conference room entrances.",
+    //       "Connect with 10 people to make this proof. Ask to tap their ring, share socials, and discover event activity that you have in common.",
     //     userRequirements: {
-    //       create: [],
-    //     },
-    //     locationRequirements: {
     //       create: [
     //         {
-    //           name: "Attend 5 talks at ZK Summit 11",
-    //           numSigsRequired: 5,
+    //           name: "Connect with 10 people at SigSing",
+    //           numSigsRequired: 10,
     //           sigNullifierRandomness: getServerRandomNullifierRandomness(), // Ensures signatures cannot be reused to meet this requirement
-    //           locations: {
-    //             connect: allTalkIds.map((id) => ({ id })),
+    //           users: {
+    //             connect: allUserIds.map((id) => ({ id })),
     //           },
     //         },
     //       ],
     //     },
+    //     locationRequirements: {
+    //       create: [],
+    //     },
     //   },
     // });
+
+    // Quest 2: Meet 3 speakers
+    // await prisma.quest.create({
+    //   data: {
+    //     name: "🎤 Meet the speakers",
+    //     description:
+    //       "Ask 3 speakers a question or share feedback about their talk. Ask to tap their ring to collect a link to their presentation slides (if available)",
+    //     userRequirements: {
+    //       create: [
+    //         {
+    //           name: "Connect with 3 speakers at the Sig Sing workshop",
+    //           numSigsRequired: 3,
+    //           sigNullifierRandomness: getServerRandomNullifierRandomness(), // Ensures signatures cannot be reused to meet this requirement
+    //           users: {
+    //             connect: speakerUserIds.map((id) => ({ id })),
+    //           },
+    //         },
+    //       ],
+    //     },
+    //     locationRequirements: {
+    //       create: [],
+    //     },
+    //   },
+    // });
+
+    // Quest 3: Attend 5 talks
+    await prisma.quest.create({
+      data: {
+        name: "👩‍🏫 Collect 5 Talk ZK-POAPs",
+        description:
+          "Collect 5 ZK-POAPs for talks you enjoyed to make this proof. Find the NFC stickers corresponding to each one.",
+        userRequirements: {
+          create: [],
+        },
+        locationRequirements: {
+          create: [
+            {
+              name: "Attend 5 talks at ZK Summit 11",
+              numSigsRequired: 5,
+              sigNullifierRandomness: getServerRandomNullifierRandomness(), // Ensures signatures cannot be reused to meet this requirement
+              locations: {
+                connect: allTalkIds.map((id) => ({ id })),
+              },
+            },
+          ],
+        },
+      },
+    });
     // END HARDCODED QUESTS FOR SIG SING WORKSHOP
 
     res.status(200).json({});

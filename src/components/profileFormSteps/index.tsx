@@ -82,7 +82,7 @@ const ProfileForm = ({
       if (!authToken || authToken.expiresAt < new Date() || !profile) {
         onHandleSignout();
         toast.error("You must be logged in to view this page");
-        router.push("/login");
+        router.push("/register");
         return DEFAULT_PROFILE_VALUES; // return default values
       }
 

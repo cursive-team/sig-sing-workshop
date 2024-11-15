@@ -4,7 +4,6 @@ import {
   PlaintextMessage,
   decryptMessage,
   encryptedMessageSchema,
-  foldedProofMessageSchema,
   inboundTapMessageSchema,
   itemRedeemedMessageSchema,
   locationTapMessageSchema,
@@ -13,7 +12,6 @@ import {
 } from "./jubSignal";
 import {
   Activity,
-  FoldedProof,
   ItemRedeemed,
   LocationSignature,
   QuestCompleted,
@@ -21,7 +19,6 @@ import {
   getActivities,
   getAllItemRedeemed,
   getAllQuestCompleted,
-  getFoldedProof,
   getKeys,
   getLocationSignatures,
   getProfile,
@@ -30,7 +27,6 @@ import {
   saveActivities,
   saveAllItemRedeemed,
   saveAllQuestCompleted,
-  saveFoldedProof,
   saveLocationSignatures,
   saveSession,
   saveUsers,
@@ -124,14 +120,12 @@ export const loadMessages = async ({
   const existingQuestCompleted = forceRefresh ? {} : getAllQuestCompleted();
   const existingItemRedeemed = forceRefresh ? {} : getAllItemRedeemed();
   const existingActivities = forceRefresh ? [] : getActivities();
-  const existingFoldedProof = forceRefresh ? undefined : getFoldedProof();
   const {
     newUsers,
     newLocationSignatures,
     newQuestCompleted,
     newItemRedeemed,
     newActivities,
-    newFoldedProof,
   } = await processEncryptedMessages({
     messages,
     recipientPrivateKey: keys.encryptionPrivateKey,
@@ -141,7 +135,6 @@ export const loadMessages = async ({
     existingQuestCompleted,
     existingItemRedeemed,
     existingActivities,
-    existingFoldedProof,
   });
 
   // Save users, location signatures, activities to localStorage
@@ -150,7 +143,6 @@ export const loadMessages = async ({
   saveAllQuestCompleted(newQuestCompleted);
   saveAllItemRedeemed(newItemRedeemed);
   saveActivities(newActivities);
-  saveFoldedProof(newFoldedProof);
 
   // Update the session
   session.lastMessageFetchTimestamp = new Date(mostRecentMessageTimestamp);
@@ -167,14 +159,12 @@ const processEncryptedMessages = async (args: {
   existingQuestCompleted: Record<string, QuestCompleted>;
   existingItemRedeemed: Record<string, ItemRedeemed>;
   existingActivities: Activity[];
-  existingFoldedProof: FoldedProof | undefined;
 }): Promise<{
   newUsers: Record<string, User>;
   newLocationSignatures: Record<string, LocationSignature>;
   newQuestCompleted: Record<string, QuestCompleted>;
   newItemRedeemed: Record<string, ItemRedeemed>;
   newActivities: Activity[];
-  newFoldedProof: FoldedProof | undefined;
 }> => {
   const {
     messages,
@@ -185,10 +175,7 @@ const processEncryptedMessages = async (args: {
     existingQuestCompleted: questCompleted,
     existingItemRedeemed: itemRedeemed,
     existingActivities: activities,
-    existingFoldedProof,
   } = args;
-
-  let foldedProof = existingFoldedProof;
 
   activities.reverse(); // We will reverse the activities array at the end - this is for faster array operations
 
@@ -493,39 +480,6 @@ const processEncryptedMessages = async (args: {
         } finally {
           break;
         }
-      case JUB_SIGNAL_MESSAGE_TYPE.FOLDED_PROOF:
-        try {
-          if (metadata.fromPublicKey !== recipientPublicKey) {
-            throw new Error(
-              "Invalid message: folded proof messages must be sent from self"
-            );
-          }
-
-          const { pfId, pfLink } = await foldedProofMessageSchema.validate(
-            data
-          );
-          const newFoldedProof: FoldedProof = {
-            pfId,
-            pfLink,
-            ts: metadata.timestamp.toISOString(),
-          };
-          foldedProof = newFoldedProof;
-
-          const activity = {
-            type: JUB_SIGNAL_MESSAGE_TYPE.FOLDED_PROOF,
-            name: pfLink,
-            id: pfId,
-            ts: metadata.timestamp.toISOString(),
-          };
-          activities.push(activity);
-        } catch (error) {
-          console.error(
-            "Invalid folded proof message received from server: ",
-            message
-          );
-        } finally {
-          break;
-        }
       case JUB_SIGNAL_MESSAGE_TYPE.ITEM_REDEEMED:
         try {
           const { id, name, qrId } = await itemRedeemedMessageSchema.validate(
@@ -576,6 +530,5 @@ const processEncryptedMessages = async (args: {
     newQuestCompleted: questCompleted,
     newItemRedeemed: itemRedeemed,
     newActivities: activities,
-    newFoldedProof: foldedProof,
   };
 };

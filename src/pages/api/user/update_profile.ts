@@ -53,7 +53,7 @@ export default async function handler(
     telegramUsername !== "@" &&
     !telegramUsernameRegex.test(telegramUsername)
   ) {
-    return res.status(400).json({ error: "Invalid Telegram username" });
+    return res.status(400).json({ error: "Invalid Daimo username" });
   }
 
   if (bio && bio.length > 200) {

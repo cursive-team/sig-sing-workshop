@@ -1,5 +1,4 @@
 import { Icons } from "@/components/Icons";
-import { ProfileImage } from "@/components/ProfileImage";
 import { TabsProps, Tabs } from "@/components/Tabs";
 import { Card } from "@/components/cards/Card";
 import { ListLayout } from "@/layouts/ListLayout";
@@ -32,7 +31,7 @@ import { IconCircle } from "@/components/IconCircle";
 import { NoResultContent } from "@/components/NoResultContent";
 import { classed } from "@tw-classed/react";
 import { logClientEvent } from "@/lib/client/metrics";
-import { useWorker } from "@/hooks/useWorker";
+import { toast } from "sonner";
 
 interface LinkCardProps {
   name: string;
@@ -211,8 +210,6 @@ export default function Social() {
   const [tabsItems, setTabsItems] = useState<TabsProps["items"]>();
   const [isLoading, setLoading] = useState(false);
 
-  const { work, folding } = useWorker();
-
   const isMenuOpen = getState().isMenuOpen ?? false;
 
   // Helper function to compute data needed to populate tabs
@@ -285,7 +282,7 @@ export default function Social() {
           <div className="flex flex-col gap-4 mt-2">
             {activities.length === 1 && (
               <NoResultContent>
-                Get started by tapping badges and talk stickers!
+                Get started by tapping rings and NFC stickers!
               </NoResultContent>
             )}
             {activities.length > 1 &&
@@ -322,7 +319,7 @@ export default function Social() {
           <div className="flex flex-col gap-5 mt-2">
             {contactUsersList.length === 0 && (
               <NoResultContent>
-                Tap badges to share socials and connect with others!
+                Tap rings to share socials and connect with others!
               </NoResultContent>
             )}
             {contactUsersList.length !== 0 &&
@@ -335,13 +332,17 @@ export default function Social() {
                       {users.map((user, index) => {
                         const { name, inTs, bio } = user;
                         const date = inTs ? formatDate(inTs) : "-";
+                        const bioMatch = bio?.match(/^@(.*)\|/);
+                        const actualBio = bioMatch
+                          ? bio?.substring(bioMatch[0].length)
+                          : bio;
 
                         return (
                           <LinkCard
                             key={index}
                             name={name}
                             date={date}
-                            other={bio ?? ""}
+                            other={actualBio ?? ""}
                             href={`/users/${user.uuid}`}
                           />
                         );
@@ -395,6 +396,7 @@ export default function Social() {
         authToken.expiresAt < new Date()
       ) {
         setLoading(false);
+        toast.error("Need to be registered to view home page.");
         router.push("/register");
         return;
       }
@@ -414,13 +416,6 @@ export default function Social() {
             await loadMessages({ forceRefresh: false });
           } catch (error) {
             console.error("Failed to load messages upon page reload:", error);
-          }
-
-          // Begin running folding worker on refresh
-          if (!folding) {
-            const users = getUsers();
-            const locationSignatures = getLocationSignatures();
-            work(Object.values(users), Object.values(locationSignatures));
           }
         }
       }
@@ -476,18 +471,16 @@ export default function Social() {
             </button>
           </div>
 
-          <div className="flex flex-col justify-between py-2">
-            <div className="flex flex-col gap-1">
-              <div className="flex flex-col gap-2">
-                <h2 className="text-xl leading-6 tracking-[-0.2px] text-iron-950 font-bold">
-                  {profile?.displayName}
-                </h2>
-                <span className="text-sm font-normal text-iron-950">
-                  {numConnections === 1
-                    ? `1 contact`
-                    : `${numConnections} contacts`}
-                </span>
-              </div>
+          <div className="flex flex-col justify-center gap-4 py-2">
+            <div className="flex flex-col gap-2">
+              <h2 className="text-xl leading-6 tracking-[-0.2px] text-iron-950 font-bold">
+                {profile?.displayName}
+              </h2>
+              <span className="text-sm font-normal text-iron-950">
+                {numConnections === 1
+                  ? `1 contact`
+                  : `${numConnections} contacts`}
+              </span>
             </div>
             <Link href="/leaderboard">
               <Button size="small" variant="tertiary">

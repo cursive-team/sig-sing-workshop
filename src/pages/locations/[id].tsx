@@ -75,7 +75,7 @@ const LocationDetails = () => {
             <Card.Base
               className="!border-primary/10 bg-cover bg-center bg-no-repeat"
               style={{
-                backgroundImage: "url('/bg-gradient-card.png')",
+                background: "linear-gradient(180deg, #bde1f9 0%, #accdfe 100%)",
               }}
             >
               <div className="flex flex-col py-4 px-3 min-h-[180px]">

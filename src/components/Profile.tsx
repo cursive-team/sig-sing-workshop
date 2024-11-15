@@ -55,7 +55,7 @@ const Profile = ({ handleSignout }: ProfileProps) => {
     if (!authToken || authToken.expiresAt < new Date()) {
       handleSignout();
       toast.error("You must be logged in to update your profile");
-      router.push("/login");
+      router.push("/register");
       return;
     }
 
@@ -130,7 +130,7 @@ const Profile = ({ handleSignout }: ProfileProps) => {
     if (!authToken || authToken.expiresAt < new Date()) {
       handleSignout();
       toast.error("You must be logged in to update your profile");
-      router.push("/login");
+      router.push("/register");
       return;
     }
 

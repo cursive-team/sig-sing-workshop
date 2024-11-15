@@ -176,8 +176,8 @@ export default function Login() {
   if (displayState === DisplayState.PASSKEY) {
     return (
       <FormStepLayout
-        title="Cursive NFC Demo"
-        subtitle="Login to view your social graph and event activity, or tap your card if you haven’t registered."
+        title="Backpocket Alpha"
+        subtitle="Login to view your social graph and make queries."
         className="pt-4"
         onSubmit={handleSubmitWithPasskey}
       >
@@ -189,24 +189,27 @@ export default function Login() {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
         />
-        <Button type="submit">
-          {loading ? "Logging in..." : "Login with passkey"}
-        </Button>
-        <Button
-          variant="transparent"
-          onClick={(e) => {
-            e.preventDefault();
-            handlePasswordLogin();
-          }}
-        >
-          Login with password instead
-        </Button>
+
+        <div className="flex flex-col gap-4">
+          <Button type="submit">
+            {loading ? "Logging in..." : "Login with passkey"}
+          </Button>
+          <span
+            className="text-center text-sm"
+            onClick={(e) => {
+              e.preventDefault();
+              handlePasswordLogin();
+            }}
+          >
+            <u>Login with password instead</u>
+          </span>
+        </div>
       </FormStepLayout>
     );
   } else if (displayState === DisplayState.PASSWORD) {
     return (
       <FormStepLayout
-        title="Cursive NFC Demo"
+        title="Backpocket Alpha"
         subtitle="Login to view your social graph and event activity, or tap your card if you haven’t registered."
         className="pt-4"
         onSubmit={handleSubmitWithPassword}
@@ -227,10 +230,13 @@ export default function Login() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <Button type="submit">{loading ? "Logging in..." : "Login"}</Button>
-        <Button variant="transparent" onClick={handlePasskeyLogin}>
-          Login with passkey instead
-        </Button>
+
+        <div className="flex flex-col gap-4">
+          <Button type="submit">{loading ? "Logging in..." : "Login"}</Button>
+          <span className="text-center text-sm" onClick={handlePasskeyLogin}>
+            <u>Login with passkey instead</u>
+          </span>
+        </div>
       </FormStepLayout>
     );
   }

@@ -7,11 +7,11 @@
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
   /* Colors */
-  --bg-primary: #DFF1FF;
-  --color-primary: #4015EC;
-  --color-secondary: #8C73F4;
-  --color-tertiary: #E9F3FF;
-  --color-error: #D40018;
+  --bg-primary: #dff1ff;
+  --color-primary: #4015ec;
+  --color-secondary: #8c73f4;
+  --color-tertiary: #e9f3ff;
+  --color-error: #d40018;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,7 +28,7 @@ body {
   padding: 0;
   height: 100%;
   @apply text-iron-950;
-  background-image: url('/bg-gradient.jpg');
+  background: linear-gradient(180deg, #bde1f9 0%, #bdd6fc 100%);
   background-repeat: no-repeat;
   background-size: cover;
   text-rendering: geometricPrecision;
@@ -67,7 +67,7 @@ body {
   display: grid !important;
   gap: 8px !important;
   height: 10px !important;
-  grid-template-columns: repeat( auto-fit, minmax(50px, 1fr) );
+  grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
 }
 
 .swiper-pagination .folded-dot {

@@ -36,7 +36,8 @@ model User {
   receivedBenchmarkMessages BenchmarkMessage[] @relation("BenchmarkMessageRecipient")
   questProofs               QuestProof[]       @relation("QuestProofUser")
   admin                     Admin?
-  foldedProofs              FoldedProof[]
+  Room                      Room[]
+  RoomMember                RoomMember[]
 }
 
 model Admin {
@@ -168,19 +169,6 @@ model QuestProof {
   @@unique([questId, userId])
 }
 
-model FoldedProof {
-  id                String   @id @default(uuid())
-  userId            Int
-  attendeeProofLink String?
-  attendeeNumFolded Int?
-  speakerProofLink  String?
-  speakerNumFolded  Int?
-  talkProofLink     String?
-  talkNumFolded     Int?
-  createdAt         DateTime @default(now())
-  user              User     @relation(fields: [userId], references: [id])
-}
-
 model UserSigNullifier {
   id                String          @id @default(uuid())
   questProofId      String
@@ -218,4 +206,26 @@ model CmacChipRegistration {
   chipId         String
   isLocationChip Boolean
   createdAt      DateTime @default(now())
+}
+
+model Room {
+  id         Int          @id @default(autoincrement())
+  name       String
+  numParties Int
+  isActive   Boolean      @default(true)
+  creatorId  Int?
+  createdAt  DateTime     @default(now())
+  creator    User?         @relation(fields: [creatorId], references: [id])
+  members    RoomMember[]
+  password   String       @default("")
+}
+
+model RoomMember {
+  id        Int      @id @default(autoincrement())
+  roomId    Int
+  userId    Int?
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id])
+  user      User?     @relation(fields: [userId], references: [id])
+  displayName String?
 }

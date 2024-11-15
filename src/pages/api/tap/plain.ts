@@ -4,11 +4,7 @@ import { boolean, object, string } from "yup";
 import { ErrorResponse } from "@/types";
 import { sign } from "@/lib/shared/signature";
 import { getCounterMessage } from "babyjubjub-ecdsa";
-import {
-  ChipType,
-  getChipIdFromIykRef,
-  getChipTypeFromChipId,
-} from "@/lib/server/iyk";
+import { verifyCmac } from "@/lib/server/cmac";
 const crypto = require("crypto");
 
 export enum TapResponseCode {
@@ -123,100 +119,24 @@ export const generateChipSignature = async (
   return { message, signature };
 };
 
-/**
- * GET
- * Receives an iyk chip iykRef
- * Responds with person tap data, location tap data, or an error
- */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<TapResponse | ErrorResponse>
+  res: NextApiResponse<{ url: string } | ErrorResponse>
 ) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // chipId must be provided
-  const chipId = req.query.chipId;
-  if (!chipId || typeof chipId !== "string") {
-    return res.status(400).json({ error: "Invalid chipId provided" });
+  // chipEnc must be provided
+  const chipEnc = req.query.chipEnc;
+  if (!chipEnc || typeof chipEnc !== "string") {
+    return res.status(400).json({ error: "Invalid chipEnc provided" });
   }
 
-  // chip key must exist
-  const chipKey = await prisma.chipKey.findFirst({
-    where: {
-      chipId,
-    },
-  });
-  if (!chipKey) {
-    return res.status(400).json({
-      code: TapResponseCode.CHIP_KEY_NOT_FOUND,
-      error: "Chip key not found",
-    });
-  }
-
-  // if user is registered, return user data
-  const user = await prisma.user.findUnique({
-    where: {
-      chipId,
-    },
-  });
-  if (user) {
-    // If user is not registered, return person not registered response
-    if (!user.isRegistered) {
-      return res
-        .status(200)
-        .json({ code: TapResponseCode.PERSON_NOT_REGISTERED });
-    }
-
-    // Get signature from chip
-    const { message, signature } = await generateChipSignature(chipId);
-
-    const personTapResponse: PersonTapResponse = {
-      displayName: user.displayName,
-      pkId: user.id.toString(),
-      psiPublicKeysLink: user.psiPublicKeysLink,
-      encryptionPublicKey: user.encryptionPublicKey,
-      twitter: user.twitter ? user.twitter : undefined,
-      telegram: user.telegram ? user.telegram : undefined,
-      bio: user.bio ? user.bio : undefined,
-      isUserSpeaker: user.isUserSpeaker,
-      signaturePublicKey: user.signaturePublicKey,
-      signatureMessage: message,
-      signature,
-    };
-    return res
-      .status(200)
-      .json({ code: TapResponseCode.VALID_PERSON, person: personTapResponse });
-  }
-
-  // if location is registered, return location data
-  const location = await prisma.location.findUnique({
-    where: {
-      chipId,
-    },
-  });
-  if (location) {
-    // Get signature from chip
-    const { message, signature } = await generateChipSignature(chipId);
-
-    const locationTapResponse: LocationTapResponse = {
-      id: location.id.toString(),
-      name: location.name,
-      stage: location.stage,
-      speaker: location.speaker,
-      description: location.description,
-      startTime: location.startTime,
-      endTime: location.endTime,
-      signaturePublicKey: location.signaturePublicKey,
-      signatureMessage: message,
-      signature,
-    };
-    return res.status(200).json({
-      code: TapResponseCode.VALID_LOCATION,
-      location: locationTapResponse,
-    });
-  }
-
-  return res.status(200).json({ code: TapResponseCode.PERSON_NOT_REGISTERED });
+  // verify encryption
+  const chipId = verifyCmac(chipEnc);
+  console.log("ChipId", chipId);
+  return res
+    .status(200)
+    .json({ url: `https://connections.cursive.team/tap?chipId=${chipId}` });
 }

@@ -2,7 +2,7 @@ import { Transition, Dialog } from "@headlessui/react";
 import React, { Fragment } from "react";
 import { Icons } from "../Icons";
 import { cn } from "@/lib/client/utils";
-import { DM_Sans } from "@next/font/google";
+import { DM_Sans } from "next/font/google";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],

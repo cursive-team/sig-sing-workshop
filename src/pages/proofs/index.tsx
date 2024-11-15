@@ -9,7 +9,6 @@ import React, { useMemo, useRef, useState } from "react";
 import { QuestWithCompletion } from "@/types";
 import { getPinnedQuest } from "@/lib/client/localStorage/questPinned";
 import { useQuestRequirements } from "@/hooks/useQuestRequirements";
-import { FOLDED_MOCKS, FolderCard } from "@/components/cards/FoldedCard";
 
 export default function QuestsPage() {
   const pinnedQuests = useRef<Set<number>>(getPinnedQuest());
@@ -42,8 +41,8 @@ export default function QuestsPage() {
   return (
     <div className="flex flex-col gap-4 pt-4">
       <span className="text-iron-600 font-sans text-xs">
-        Post proofs about your SigSing experience on Twitter, while preserving
-        privacy over the people you met and talks you attended.
+        Post proofs about your Backpocket experience on Twitter, while
+        preserving privacy over the people you met and talks you attended.
       </span>
 
       <LoadingWrapper
@@ -53,7 +52,6 @@ export default function QuestsPage() {
         noResultsLabel="No proofs found"
       >
         <>
-          <FolderCard items={FOLDED_MOCKS} />
           {displayQuests.map(
             (
               {

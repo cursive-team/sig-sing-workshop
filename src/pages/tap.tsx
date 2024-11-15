@@ -15,6 +15,8 @@ import {
   fetchUserByUUID,
   getUsers,
   getLocationSignatures,
+  saveUsers,
+  User,
 } from "@/lib/client/localStorage";
 import {
   encryptInboundTapMessage,
@@ -45,8 +47,23 @@ export default function Tap() {
       const keys = getKeys();
 
       if (!authToken || authToken.expiresAt < new Date() || !profile || !keys) {
-        toast.error("You must be logged in to connect");
-        router.push("/register");
+        let users: Record<string, User> = {};
+        users["0"] = {
+          pkId: person.pkId,
+          name: person.displayName,
+          encPk: person.encryptionPublicKey,
+          psiPkLink: person.psiPublicKeysLink,
+          x: person.twitter,
+          tg: person.telegram,
+          bio: person.bio,
+          sigPk: person.signaturePublicKey,
+          msg: person.signatureMessage,
+          sig: person.signature,
+          isSpeaker: person.isUserSpeaker,
+          inTs: new Date().toISOString(),
+        };
+        saveUsers(users);
+        router.push("/preview");
         return;
       }
 
@@ -178,17 +195,17 @@ export default function Tap() {
       return mockRef ? `&mockRef=${mockRef}` : "";
     };
 
-    const handlePersonRegistration = (chipId: string) => {
+    const handlePersonRegistration = (chipEnc: string) => {
       const authToken = getAuthToken();
       if (authToken) {
         router.push(`/friend_not_registered`);
         return;
       }
-      router.push(`/register?chipId=${chipId}`);
+      router.push(`/register?chipEnc=${chipEnc}`);
     };
 
-    const handleLocationRegistration = (chipId: string) => {
-      router.push(`/register_location?chipId=${chipId}`);
+    const handleLocationRegistration = (chipEnc: string) => {
+      router.push(`/register_location?chipEnc=${chipEnc}`);
     };
 
     const handleSigCardLocationRegistration = (signaturePublicKey: string) => {
@@ -196,14 +213,7 @@ export default function Tap() {
     };
 
     const handlePersonTap = async (person: PersonTapResponse) => {
-      const authToken = getAuthToken();
-      if (!authToken || authToken.expiresAt < new Date()) {
-        // If user is not logged in, redirect to login
-        router.push("/register");
-        // setPendingPersonTapResponse(person);
-      } else {
-        processPersonTap(person);
-      }
+      processPersonTap(person);
     };
 
     const handleLocationTap = async (location: LocationTapResponse) => {
@@ -218,8 +228,8 @@ export default function Tap() {
     };
 
     // ----- HANDLE CMAC TAP -----
-    const chipId = router.query.chipId as string;
-    if (!chipId) {
+
+    if (!location.hash) {
       toast.error("Invalid tap! Please try again.");
       router.push("/");
       return;
@@ -227,53 +237,39 @@ export default function Tap() {
 
     logClientEvent("tapProcessNewTap", {});
 
-    fetch(`/api/tap/plain?chipId=${chipId}`, {
+    const urlParams = new URLSearchParams(location.hash.slice(1));
+    const chipEnc = urlParams.get("e");
+
+    if (!chipEnc) {
+      toast.error("Invalid tap! Please try again.");
+      router.push("/");
+    }
+
+    fetch(`/api/tap/plain?chipEnc=${chipEnc}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     })
       .then((response) => {
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          toast.error("Invalid tap! Please try again.");
+          router.push("/");
+          return;
+        }
         return response.json();
       })
-      .then(async (data) => {
-        const tapResponse = tapResponseSchema.validateSync(data);
-        switch (tapResponse.code) {
-          case TapResponseCode.CMAC_INVALID:
-            throw new Error("CMAC invalid!");
-          case TapResponseCode.PERSON_NOT_REGISTERED:
-            logClientEvent("tapPersonNotRegistered", {});
-            handlePersonRegistration(chipId);
-            break;
-          case TapResponseCode.LOCATION_NOT_REGISTERED:
-            logClientEvent("tapLocationNotRegistered", {});
-            handleLocationRegistration(chipId);
-            break;
-          case TapResponseCode.VALID_PERSON:
-            logClientEvent("tapValidPerson", {});
-            if (!tapResponse.person) {
-              throw new Error("Person is null!");
-            }
-            await handlePersonTap(tapResponse.person);
-            break;
-          case TapResponseCode.VALID_LOCATION:
-            logClientEvent("tapValidLocation", {});
-            if (!tapResponse.location) {
-              throw new Error("Location is null!");
-            }
-            await handleLocationTap(tapResponse.location);
-            break;
-          case TapResponseCode.CHIP_KEY_NOT_FOUND:
-            throw new Error("Chip key not found!");
-          default:
-            throw new Error("Invalid tap response code!");
-        }
+      .then((response) => {
+        const finalUrl = response.url;
+        console.log(finalUrl);
+        window.location.href = finalUrl;
       })
       .catch((error) => {
-        console.error(error);
-        toast.error("Error! Please contact a member of the Cursive team.");
+        console.error("Error fetching tap response: ", error);
+        toast.error(
+          "An error occured while processing the tap. Please try again."
+        );
+        router.push("/");
       });
   }, [router, processPersonTap, processLocationTap]);
 

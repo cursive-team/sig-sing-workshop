@@ -73,7 +73,7 @@ const CompleteQuestModal = ({
 
     if (!authToken || authToken.expiresAt < new Date() || !profile || !keys) {
       toast.error("You must be logged in to generate a proof");
-      router.push("/login");
+      router.push("/register");
       return;
     }
 
@@ -204,7 +204,7 @@ const CompleteQuestModal = ({
   };
 
   const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-    `I am a verified ${quest.name} at zkSummit11. Here's my ZK proof:`
+    `I am a verified ${quest.name}. Here's my ZK proof from @cursive_team:`
   )}&url=${encodeURIComponent(qrCodeUrl)}`;
 
   const getModalContent = (): JSX.Element => {
@@ -264,14 +264,14 @@ const CompleteQuestModal = ({
                 </span>
               </QRCodeWrapper>
               <Button onClick={copyProofLink}>Copy link to proof</Button>
-              {/* <Link href={twitterShareUrl} target="_blank">
+              <Link href={twitterShareUrl} target="_blank">
                 <Button
                   variant="transparent"
                   icon={<Icons.Twitter className="text-primary mr-2" />}
                 >
                   Share on Twitter
                 </Button>
-              </Link> */}
+              </Link>
             </div>
           </div>
         );
